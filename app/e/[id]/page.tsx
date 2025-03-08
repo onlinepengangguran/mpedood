@@ -1,37 +1,52 @@
-import Link from "next/link"
-import { Music, Download, Share2, Clock, Calendar, User, Heart, ExternalLink } from "lucide-react"
-import config from "@/config/default/config.json"
-import { getSongById, getRelatedSongs } from "@/lib/data"
-import type { Metadata } from "next"
-import FloatingMenu from "@/components/FloatingMenu"
-import VideoPlayer from "@/components/VideoPlayer"
-import ShareButtons from "@/components/ShareButtons"
-import RelatedSongCard from "@/components/RelatedSongCard"
+import Link from "next/link";
+import { Music, Download, Share2, Clock, Calendar, User, Heart, ExternalLink } from "lucide-react";
+import config from "@/config/default/config.json";
+import { getSongById, getRelatedSongs } from "@/lib/data";
+import type { Metadata } from "next";
+import FloatingMenu from "@/components/FloatingMenu";
+import VideoPlayer from "@/components/VideoPlayer";
+import ShareButtons from "@/components/ShareButtons";
+import RelatedSongCard from "@/components/RelatedSongCard";
+
+type Song = {
+  id: string;
+  title: string;
+  image: string;
+  duration: string;
+  views: string;
+  uploaded: string;
+  description: string;
+  size: string;
+  protected_embed: boolean;
+  artist?: string; // Optional artist field
+};
 
 type Props = {
-  params: { id: string }
-}
+  params: { id: string };
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const song = await getSongById(params.id)
+  const { id } = params; // No need to await params here
+  const song = await getSongById(id);
 
   if (!song) {
     return {
       title: "Song not found",
       description: "The requested song could not be found.",
-    }
+    };
   }
 
   return {
     title: config.download_title.replace("%title%", song.title),
     description: config.download_description.replace(/%title%/g, song.title).replace("%size%", song.size || ""),
     robots: config.download_robots,
-  }
+  };
 }
 
 export default async function DownloadPage({ params }: Props) {
-  const song = await getSongById(params.id)
-  const relatedSongs = await getRelatedSongs(params.id)
+  const { id } = params; // No need to await params here
+  const song = await getSongById(id);
+  const relatedSongs = await getRelatedSongs(id);
 
   if (!song) {
     return (
@@ -45,7 +60,7 @@ export default async function DownloadPage({ params }: Props) {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -57,7 +72,7 @@ export default async function DownloadPage({ params }: Props) {
             dangerouslySetInnerHTML={{ __html: config.download_page_title.replace("%title%", song.title) }}
           />
 
-          <VideoPlayer videoId={params.id} title={song.title} thumbnail={song.image} />
+          <VideoPlayer videoId={id} title={song.title} thumbnail={song.image} />
 
           <div className="video-details">
             <div className="video-details-meta">
@@ -141,7 +156,7 @@ export default async function DownloadPage({ params }: Props) {
             Related Songs
           </h2>
           <div className="video-grid">
-            {relatedSongs.map((relatedSong: any) => (
+            {relatedSongs.map((relatedSong: Song) => (
               <RelatedSongCard key={relatedSong.id} song={relatedSong} downloadPermalink={config.download_permalink} />
             ))}
           </div>
@@ -150,6 +165,5 @@ export default async function DownloadPage({ params }: Props) {
 
       <FloatingMenu />
     </div>
-  )
+  );
 }
-

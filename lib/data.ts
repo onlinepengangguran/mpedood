@@ -1,119 +1,119 @@
 import { agc } from "./agc"
 
-// Fallback data in case the API fails
-const fallbackSongs = [
-  {
-    id: "sample1",
-    title: "Sample Song 1",
-    image: "/placeholder.svg?height=480&width=640",
-    duration: "3:45",
-    views: "1.2M",
-    uploaded: "2 months ago",
-    description: "This is a sample song description.",
-  },
-  {
-    id: "sample2",
-    title: "Sample Song 2",
-    image: "/placeholder.svg?height=480&width=640",
-    duration: "4:20",
-    views: "850K",
-    uploaded: "1 month ago",
-    description: "Another sample song description.",
-  },
-  {
-    id: "sample3",
-    title: "Sample Song 3",
-    image: "/placeholder.svg?height=480&width=640",
-    duration: "3:15",
-    views: "2.1M",
-    uploaded: "3 months ago",
-    description: "Yet another sample song description.",
-  },
-]
+// Fallback data removed, redirect to 404 page instead
 
-export async function getTopSongs() {
-  try {
-    const songs = await agc.getSearch("top songs")
-    return songs && songs.length > 0 ? songs : fallbackSongs
-  } catch (error) {
-    console.error("Error fetching top songs:", error)
-    return fallbackSongs
-  }
+export type Song = {
+  id: string;
+  title: string;
+  image: string;
+  duration: string;
+  views: string;
+  uploaded: string;
+  description: string;
+  size: string;
+  protected_embed: boolean;
 }
 
-export async function getRecentSearches() {
-  // This could be implemented later with local storage or a database
-  return ["pop music", "rock songs", "dance hits", "top 40"]
+const redirectTo404 = () => {
+  window.location.href = "/404";
 }
 
-export async function searchSongs(query: string) {
+export async function getTopSongs(): Promise<Song[]> {
   try {
-    const songs = await agc.getSearch(query)
-    return songs && songs.length > 0 ? songs : fallbackSongs
-  } catch (error) {
-    console.error(`Error searching for "${query}":`, error)
-    return fallbackSongs
-  }
-}
-
-export async function getSongById(id: string) {
-  try {
-    const song = await agc.getDownload(id)
-    if (song) return song
-
-    // Return a fallback song if the real one isn't found
-    return {
-      id,
-      title: "Sample Song",
-      image: "/placeholder.svg?height=480&width=640",
-      duration: "3:45",
-      views: "1.2M",
-      uploaded: "2 months ago",
-      description: "This is a sample song that's shown when the requested song couldn't be found.",
-      size: "4.2 MB",
-      protected_embed: false,
+    const songs: Song[] = await agc.getSearch("top songs");
+    if (!songs || songs.length === 0) {
+      redirectTo404();
+      return []; // Return an empty array of type Song[]
     }
+    return songs;
   } catch (error) {
-    console.error(`Error getting song with ID "${id}":`, error)
-    return {
-      id,
-      title: "Sample Song",
-      image: "/placeholder.svg?height=480&width=640",
-      duration: "3:45",
-      views: "1.2M",
-      uploaded: "2 months ago",
-      description: "This is a sample song that's shown when the requested song couldn't be found.",
-      size: "4.2 MB",
-      protected_embed: false,
-    }
+    console.error("Error fetching top songs:", error);
+    redirectTo404();
+    return []; // Return an empty array of type Song[]
   }
 }
 
-export async function getRelatedSongs(id: string) {
+export async function getRecentSearches(): Promise<string[]> {
+  return ["pop music", "rock songs", "dance hits", "top 40"];
+}
+
+export async function searchSongs(query: string): Promise<Song[]> {
   try {
-    const songs = await agc.getRelated(id)
-    return songs && songs.length > 0 ? songs : fallbackSongs
+    const songs: Song[] = await agc.getSearch(query);
+    if (!songs || songs.length === 0) {
+      redirectTo404();
+      return []; // Return an empty array of type Song[]
+    }
+    return songs;
   } catch (error) {
-    console.error(`Error getting related songs for ID "${id}":`, error)
-    return fallbackSongs
+    console.error(`Error searching for "${query}":`, error);
+    redirectTo404();
+    return []; // Return an empty array of type Song[]
+  }
+}
+
+export async function getSongById(id: string): Promise<Song> {
+  try {
+    const song: Song = await agc.getDownload(id);
+    if (song) return song;
+
+    redirectTo404(); // Redirect to 404 if song not found
+    return {
+      id: "",
+      title: "",
+      image: "",
+      duration: "",
+      views: "",
+      uploaded: "",
+      description: "",
+      size: "",
+      protected_embed: false,
+    }; // Return a default Song object
+  } catch (error) {
+    console.error(`Error getting song with ID "${id}":`, error);
+    redirectTo404();
+    return {
+      id: "",
+      title: "",
+      image: "",
+      duration: "",
+      views: "",
+      uploaded: "",
+      description: "",
+      size: "",
+      protected_embed: false,
+    }; // Return a default Song object
+  }
+}
+
+export async function getRelatedSongs(id: string): Promise<Song[]> {
+  try {
+    const songs: Song[] = await agc.getRelated(id);
+    if (!songs || songs.length === 0) {
+      redirectTo404();
+      return []; // Return an empty array of type Song[]
+    }
+    return songs;
+  } catch (error) {
+    console.error(`Error getting related songs for ID "${id}":`, error);
+    redirectTo404();
+    return []; // Return an empty array of type Song[]
   }
 }
 
 export async function getPlaylist(slug: string) {
-  // For now, we'll return a playlist with fallback songs
   if (slug === "top-hits") {
     return {
       title: "Top Hits 2023",
       slug: "top-hits",
       description: "The most popular songs of 2023",
-      songs: fallbackSongs,
-    }
+      songs: [], // No fallback songs
+    };
   }
-  return null
+  return null;
 }
 
 export async function getPage(slug: string) {
-  // Static pages content
   const pages: Record<string, { title: string; content: string }> = {
     about: {
       title: "About Us",
@@ -137,7 +137,6 @@ export async function getPage(slug: string) {
                   <li>A statement that the information in the notification is accurate, and, under penalty of perjury, that you are authorized to act on behalf of the copyright owner</li>
                 </ul>`,
     },
-  }
-  return pages[slug] || null
+  };
+  return pages[slug] || null;
 }
-
